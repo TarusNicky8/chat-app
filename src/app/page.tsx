@@ -1,33 +1,53 @@
-// Add "use client" at the top to mark this as a client component
 "use client";
 
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { io, Socket } from 'socket.io-client';
+import Navbar from '../components/Navbar';
+import MessageList from '../components/MessageList';
+import MessageInput from '../components/MessageInput';
+import ChatWindow from '../components/ChatWindow';
+import Chat from '../components/Chat';
 
 interface Message {
-  _id: string;
-  sender: string;
+  id: string;
   content: string;
+  sender: string;
   timestamp: string;
 }
 
-const Home = () => {
+const Home: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const socketRef = React.useRef<Socket | null>(null);
 
   useEffect(() => {
+    // Fetch messages from the API
     axios.get('/api/messages')
       .then((response) => {
-        setMessages(response.data as Message[]); // Assuming response.data is an array of Message objects
+        const fetchedMessages = response.data.map((msg: any) => ({
+          id: msg._id,
+          content: msg.content,
+          sender: msg.sender,
+          timestamp: msg.timestamp
+        }));
+        setMessages(fetchedMessages as Message[]);
       })
       .catch((error) => {
         console.error('Error fetching messages:', error);
       });
 
+    // Initialize socket.io
     const socket: Socket = io();
+    socketRef.current = socket;
 
-    socket.on('message', (message: Message) => {
-      setMessages((prevMessages) => [...prevMessages, message]);
+    socket.on('receive_message', (message: any) => {
+      const newMessage: Message = {
+        id: message._id,
+        content: message.content,
+        sender: message.sender,
+        timestamp: message.timestamp,
+      };
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
     return () => {
@@ -35,17 +55,51 @@ const Home = () => {
     };
   }, []);
 
+  const handleSendMessage = (content: string) => {
+    const newMessage: Message = {
+      id: 'temp-id', // Generate or replace with actual id logic
+      sender: 'Current User', // Replace with actual user logic
+      content,
+      timestamp: new Date().toISOString(),
+    };
+
+    axios.post('/api/messages', {
+      sender: newMessage.sender,
+      content: newMessage.content,
+    })
+      .then((response) => {
+        const savedMessage = response.data;
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: savedMessage._id,
+            content: savedMessage.content,
+            sender: savedMessage.sender,
+            timestamp: savedMessage.timestamp,
+          },
+        ]);
+      })
+      .catch((error) => {
+        console.error('Error sending message:', error);
+      });
+
+    if (socketRef.current) {
+      socketRef.current.emit('send_message', newMessage);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div>
-        {messages.map((message, index) => (
-          <div key={message._id}>
-            <p>{message.sender}: {message.content}</p>
-            <p>{new Date(message.timestamp).toLocaleString()}</p>
-          </div>
-        ))}
-      </div>
-    </main>
+    <div>
+      <Navbar />
+      <main className="flex flex-col items-center justify-between p-24">
+        <Chat user={{ username: 'Current User' }}>
+          <ChatWindow>
+            <MessageList messages={messages} />
+          </ChatWindow>
+          <MessageInput onSendMessage={handleSendMessage} />
+        </Chat>
+      </main>
+    </div>
   );
 };
 

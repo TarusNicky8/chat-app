@@ -2,8 +2,8 @@
 
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from './utils/db'; // Adjust path as per your project structure
-import { insertMessage, getAllMessages } from './utils/utils/dbUtils'; // Adjust path as per your project structure
+import { connectToDatabase } from './src/utils/db'; // 
+import { insertMessage, getAllMessages } from './src/utils/dbUtils'; // 
 
 const ioHandler = async (req, res) => {
   if (!res.socket.server.io) {
@@ -17,7 +17,7 @@ const ioHandler = async (req, res) => {
           return next(new Error('Authentication error'));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || '4737'); // Replace with your actual JWT secret
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || '4737'); //  JWT secret
         if (!decoded) {
           return next(new Error('Invalid token'));
         }

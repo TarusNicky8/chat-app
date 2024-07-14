@@ -1,8 +1,11 @@
-// src/components/MessageInput.tsx
-
 import React, { useState } from 'react';
+import socket from '../utils/socketClient';
 
-const MessageInput: React.FC = () => {
+interface Props {
+  onSendMessage: (content: string) => void; // Define prop for sending messages
+}
+
+const MessageInput: React.FC<Props> = ({ onSendMessage }) => {
   const [message, setMessage] = useState('');
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -11,9 +14,11 @@ const MessageInput: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle message submission logic (e.g., send message via WebSocket)
-    console.log('Message submitted:', message);
-    setMessage('');
+    if (message.trim() !== '') {
+      // Send message via parent component callback
+      onSendMessage(message);
+      setMessage('');
+    }
   };
 
   return (

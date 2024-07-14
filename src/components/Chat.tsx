@@ -1,8 +1,5 @@
-// components/Chat.tsx
-
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { insertMessage, getAllMessages } from '../utils/utils/dbUtils';
 
 interface Message {
   _id: string;
@@ -15,57 +12,53 @@ interface Props {
   user: {
     username: string;
   };
+  children: React.ReactNode; // Ensure children prop is defined
 }
 
 const SOCKET_SERVER_URL = '/';
 
-const Chat: React.FC<Props> = ({ user }) => {
+const Chat: React.FC<Props> = ({ user, children }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      const allMessages = await getAllMessages();
-      setMessages(allMessages);
-    };
-
-    fetchMessages();
-
+    // Connect to socket.io server
     socketRef.current = io(SOCKET_SERVER_URL, {
       auth: { token: localStorage.getItem('token') || '' }
     });
 
-    socketRef.current.on('load_messages', async () => {
-      const allMessages = await getAllMessages();
-      setMessages(allMessages);
+    // Fetch initial messages from server
+    socketRef.current.on('load_messages', (initialMessages: Message[]) => {
+      setMessages(initialMessages);
     });
 
+    // Listen for new messages from socket
     socketRef.current.on('receive_message', (message: Message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
 
     return () => {
+      // Disconnect socket when component unmounts
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
     };
   }, []);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     const message = {
       sender: user.username,
       content: newMessage,
       timestamp: new Date().toISOString()
     };
 
+    // Emit new message to socket server
     if (socketRef.current) {
       socketRef.current.emit('send_message', message);
     }
 
-    // Save message to MongoDB
-    await insertMessage(message);
-
+    // Clear input field after sending message
     setNewMessage('');
   };
 
@@ -85,6 +78,9 @@ const Chat: React.FC<Props> = ({ user }) => {
         onChange={(e) => setNewMessage(e.target.value)}
       />
       <button onClick={handleSendMessage}>Send</button>
+
+      {/* Optional: Render children components */}
+      {children}
     </div>
   );
 };
