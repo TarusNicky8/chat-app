@@ -1,3 +1,5 @@
+// src/components/MessageInput.tsx
+
 import React, { useState } from 'react';
 import socket from '../utils/socketClient';
 
@@ -15,6 +17,8 @@ const MessageInput: React.FC<Props> = ({ onSendMessage }) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (message.trim() !== '') {
+      // Emit message via socket
+      socket.emit('send_message', { content: message });
       // Send message via parent component callback
       onSendMessage(message);
       setMessage('');
