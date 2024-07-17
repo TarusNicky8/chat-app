@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const Navbar: React.FC = () => {
   // Placeholder for authentication status (replace with actual logic)
@@ -13,14 +14,14 @@ const Navbar: React.FC = () => {
         {/* Navigation Links */}
         <ul className="flex space-x-4">
           <li>
-            <a href="/" className="hover:text-gray-300">
-              Home
-            </a>
+            <Link href="/" passHref>
+              <span className="hover:text-gray-300 cursor-pointer">Home</span>
+            </Link>
           </li>
           <li>
-            <a href="/about" className="hover:text-gray-300">
-              About
-            </a>
+            <Link href="/about" passHref>
+              <span className="hover:text-gray-300 cursor-pointer">About</span>
+            </Link>
           </li>
           {/* Add more navigation links as needed */}
         </ul>
