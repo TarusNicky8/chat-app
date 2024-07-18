@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import socket from '../utils/socket';
+import React from 'react';
 
 interface Message {
   id: string;
@@ -9,27 +8,14 @@ interface Message {
 }
 
 interface Props {
-  messages: Message[]; // Ensure this matches the structure of Message
+  messages: Message[];
 }
 
 const MessageList: React.FC<Props> = ({ messages }) => {
-  useEffect(() => {
-    // Listen for incoming messages via WebSocket
-    socket.on('receive_message', (message: Message) => {
-      // Assuming socket handles the correct Message type
-      // Ensure messages are updated properly
-    });
-
-    return () => {
-      // Clean up socket listeners
-      socket.off('receive_message');
-    };
-  }, []);
-
   return (
     <div className="max-h-80 overflow-y-auto">
       <div className="space-y-2">
-        {messages.map(message => (
+        {messages.map((message) => (
           <div key={message.id} className="flex items-center space-x-2">
             <span className="font-semibold">{message.sender}</span>
             <span className="text-gray-500 text-sm">{message.timestamp}</span>
