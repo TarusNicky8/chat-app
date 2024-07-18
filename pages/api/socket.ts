@@ -1,18 +1,27 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { Server } from 'socket.io';
+import { Server as HTTPServer } from 'http';
+import { Server as IOServer, Socket } from 'socket.io';
+
+type NextApiResponseWithSocket = NextApiResponse & {
+  socket: {
+    server: HTTPServer & {
+      io?: IOServer;
+    };
+  };
+};
 
 // Initialize io outside the handler to ensure it's a singleton across requests
-let io: Server | null = null;
+let io: IOServer | null = null;
 
-const handler = (req: NextApiRequest, res: NextApiResponse) => {
-  if (!io) {
-    // Create a new Server instance attached to the HTTP server
-    io = new Server({
-      path: '/api/socket', // Specify the path where Socket.IO will be handled
-      serveClient: false, // Do not serve the Socket.IO client script automatically
+const handler = async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
+  if (!res.socket.server.io) {
+    console.log('Initializing new Socket.IO server...');
+    io = new IOServer(res.socket.server, {
+      path: '/api/socket',
+      serveClient: false,
     });
 
-    io.on('connection', (socket) => {
+    io.on('connection', (socket: Socket) => {
       console.log('A user connected');
 
       socket.on('send_message', (msg: string) => {
@@ -24,20 +33,27 @@ const handler = (req: NextApiRequest, res: NextApiResponse) => {
       });
     });
 
-    // Attach the Socket.IO server to the HTTP response socket
-    if (res.socket) {
-      res.socket.once('close', () => {
-        io?.close();
-        io = null;
-      });
-    } else {
-      console.error('res.socket is null or undefined');
-    }
-  } else {
-    console.log('Socket is already running');
-  }
+    res.socket.server.io = io;
 
-  res.end('Socket connected');
+    res.socket.server.on('close', () => {
+      if (io) {
+        console.log('Closing Socket.IO server...');
+        io.close((err?: Error) => {
+          if (err) {
+            console.error('Error closing Socket.IO server:', err);
+          } else {
+            console.log('Socket.IO server closed');
+            io = null;
+          }
+        });
+      }
+    });
+
+    res.end('Socket initialized');
+  } else {
+    console.log('Socket.IO server is already running');
+    res.end('Socket is already running');
+  }
 };
 
 export default handler;
