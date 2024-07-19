@@ -1,42 +1,40 @@
-// pages/api/signup.js
+// src/pages/api/signup.js
 
 import bcrypt from 'bcrypt';
-import { connectToDatabase } from '../../utils/db';
+import { connectToDatabase } from '../../src/utils/db';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { username, password } = req.body;
 
-    // Validate input
     if (!username || !password) {
-      res.status(400).json({ message: 'Username and password are required' });
-      return;
+      return res.status(400).json({ message: 'Username and password are required' });
     }
-
-    if (password.length < 6) {
-      res.status(400).json({ message: 'Password must be at least 6 characters long' });
-      return;
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const { db } = await connectToDatabase();
-    const users = db.collection('users');
 
     try {
-      // Check if user already exists
+      const { db } = await connectToDatabase();
+      const users = db.collection('users');
+
+      // Check if the user already exists
       const existingUser = await users.findOne({ username });
       if (existingUser) {
-        res.status(409).json({ message: 'Username already exists' });
-        return;
+        return res.status(400).json({ message: 'User already exists' });
       }
 
-      // Store user in database
-      await users.insertOne({ username, password: hashedPassword });
-      res.status(201).json({ message: 'User signed up successfully!' });
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insert the new user
+      const newUser = {
+        username,
+        password: hashedPassword,
+      };
+      await users.insertOne(newUser);
+
+      return res.status(201).json({ message: 'User signed up successfully' });
     } catch (error) {
-      res.status(500).json({ message: 'Failed to sign up user.' });
+      console.error('Error during signup:', error);
+      return res.status(500).json({ message: 'Internal server error' });
     }
   } else {
     res.status(405).json({ message: 'Method not allowed' });

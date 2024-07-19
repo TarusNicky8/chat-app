@@ -3,10 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
-import Navbar from '../components/Navbar';
 import MessageList from '../components/MessageList';
 import MessageInput from '../components/MessageInput';
-import ChatWindow from '../components/ChatWindow';
 import Chat from '../components/Chat';
 
 interface Message {
@@ -18,9 +16,27 @@ interface Message {
 
 const Home: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [username, setUsername] = useState<string>(''); // State to store the username
   const socketRef = React.useRef<Socket | null>(null);
 
   useEffect(() => {
+    // Fetch the username of the logged-in user
+    const fetchUsername = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await axios.get('/api/getUser', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUsername(response.data.username);
+      } catch (error) {
+        console.error('Error fetching username:', error);
+      }
+    };
+
+    fetchUsername();
+
     // Fetch messages from the API
     axios.get('/api/messages')
       .then((response) => {
@@ -56,9 +72,14 @@ const Home: React.FC = () => {
   }, []);
 
   const handleSendMessage = (content: string) => {
+    if (!username) {
+      console.error('Username is not available');
+      return;
+    }
+
     const newMessage: Message = {
       id: 'temp-id', // Generate or replace with actual id logic
-      sender: 'Current User', // Replace with actual user logic
+      sender: username, // Use the actual username
       content,
       timestamp: new Date().toISOString(),
     };
@@ -89,18 +110,15 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div>
-      <Navbar />
-      <main className="flex flex-col items-center justify-between p-24">
-        <Chat user={{ username: 'Current User' }}>
-          <ChatWindow>
-            <MessageList messages={messages} />
-          </ChatWindow>
-          <MessageInput onSendMessage={handleSendMessage} />
-        </Chat>
-      </main>
-    </div>
+    <main className="flex flex-col items-center justify-between p-24">
+      <Chat user={{ username }}>
+        
+          <MessageList messages={messages} />
+        
+        <MessageInput onSendMessage={handleSendMessage} />
+      </Chat>
+    </main>
   );
 };
 
-export default Home;
+export default Home

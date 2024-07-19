@@ -1,5 +1,8 @@
+// src/app/layout.tsx
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Navbar from "../components/Navbar";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -16,7 +19,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Navbar />
+        <div className="flex">
+          {/* Left Sidebar */}
+          <nav className="w-1/4 bg-gray-800 text-white p-4">
+            <ul>
+              <li><a href="/" className="block py-2">Home</a></li>
+              <li><a href="/about" className="block py-2">About</a></li>
+              <li><a href="/login" className="block py-2">Login</a></li>
+              <li><a href="/signup" className="block py-2">Sign Up</a></li>
+            </ul>
+          </nav>
+
+          {/* Main Content Area */}
+          <main className="w-3/4 p-4">
+            {children}
+          </main>
+
+          {/* Right Sidebar */}
+          <aside className="w-1/4 bg-gray-200 p-4">
+            {/* Additional content such as user profile, notifications, or quick links */}
+          </aside>
+        </div>
+      </body>
     </html>
   );
 }

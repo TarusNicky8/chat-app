@@ -1,3 +1,5 @@
+// src/components/MessageList.tsx
+
 import React from 'react';
 
 interface Message {

@@ -1,34 +1,32 @@
-// utils/db.js
+
 
 import { MongoClient } from 'mongodb';
-
-const uri = process.env.MONGODB_URI;
-const options = {};
-
-let client;
-let clientPromise;
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
+// a new MongoClient instance with the URI from environment variables
+const client = new MongoClient(process.env.MONGODB_URI);
+
+let clientPromise;
+
 if (process.env.NODE_ENV === 'development') {
   if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  client = new MongoClient(uri, options);
   clientPromise = client.connect();
 }
 
 export async function connectToDatabase() {
-  await clientPromise; // Ensure the client is connected before returning
-  return {
-    client,
-    db: client.db('app-data') // Replace 'your-database-name' with your actual database name
-  };
+  try {
+    const client = await clientPromise;
+    const db = client.db(); // Get the default database
+    return { db, client };
+  } catch (error) {
+    console.error('Failed to connect to the database', error);
+    throw new Error('Failed to connect to the database');
+  }
 }
-
-export { clientPromise };
