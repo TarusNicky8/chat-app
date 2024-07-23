@@ -53,7 +53,7 @@ const Home: React.FC = () => {
       });
 
     // Initialize socket.io
-    const socket: Socket = io();
+    const socket: Socket = io({ path: '/api/socket' });
     socketRef.current = socket;
 
     socket.on('receive_message', (message: any) => {
@@ -99,26 +99,24 @@ const Home: React.FC = () => {
             timestamp: savedMessage.timestamp,
           },
         ]);
+
+        if (socketRef.current) {
+          socketRef.current.emit('send_message', savedMessage);
+        }
       })
       .catch((error) => {
         console.error('Error sending message:', error);
       });
-
-    if (socketRef.current) {
-      socketRef.current.emit('send_message', newMessage);
-    }
   };
 
   return (
     <main className="flex flex-col items-center justify-between p-24">
       <Chat user={{ username }}>
-        
-          <MessageList messages={messages} />
-        
+        <MessageList messages={messages} />
         <MessageInput onSendMessage={handleSendMessage} />
       </Chat>
     </main>
   );
 };
 
-export default Home
+export default Home;

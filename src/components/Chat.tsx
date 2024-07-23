@@ -1,4 +1,5 @@
 // src/components/Chat.tsx
+"use client";
 
 import React, { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
@@ -21,7 +22,6 @@ const SOCKET_SERVER_URL = '/';
 
 const Chat: React.FC<Props> = ({ user, children }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState<string>('');
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -29,11 +29,11 @@ const Chat: React.FC<Props> = ({ user, children }) => {
       auth: { token: localStorage.getItem('token') || '' }
     });
 
-    socketRef.current.on('load_messages', (initialMessages: Message[]) => {
+    socketRef.current?.on('load_messages', (initialMessages: Message[]) => {
       setMessages(initialMessages);
     });
 
-    socketRef.current.on('receive_message', (message: Message) => {
+    socketRef.current?.on('receive_message', (message: Message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
 
@@ -43,21 +43,6 @@ const Chat: React.FC<Props> = ({ user, children }) => {
       }
     };
   }, []);
-
-  const handleSendMessage = () => {
-    const message: Message = {
-      id: 'temp-id', // Use actual logic for generating unique IDs
-      sender: user.username,
-      content: newMessage,
-      timestamp: new Date().toISOString()
-    };
-
-    if (socketRef.current) {
-      socketRef.current.emit('send_message', message);
-    }
-
-    setNewMessage('');
-  };
 
   return (
     <div>
@@ -69,12 +54,6 @@ const Chat: React.FC<Props> = ({ user, children }) => {
           </div>
         ))}
       </div>
-      <input
-        type="text"
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-      />
-      <button onClick={handleSendMessage}>Send</button>
       {children}
     </div>
   );
