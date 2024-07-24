@@ -1,4 +1,4 @@
-// src/pages/api/signup.js
+
 
 import bcrypt from 'bcrypt';
 import { connectToDatabase } from '../../src/utils/db';

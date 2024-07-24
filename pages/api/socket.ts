@@ -1,3 +1,5 @@
+
+
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Server as HTTPServer } from 'http';
 import { Server as IOServer, Socket } from 'socket.io';
@@ -10,8 +12,16 @@ type NextApiResponseWithSocket = NextApiResponse & {
   };
 };
 
+interface UserStatus {
+  username: string;
+  status: 'online' | 'offline';
+}
+
 // Initialize io outside the handler to ensure it's a singleton across requests
 let io: IOServer | null = null;
+
+// Store user status
+const userStatusList: UserStatus[] = [];
 
 const handler = async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
   if (!res.socket.server.io) {
@@ -22,14 +32,32 @@ const handler = async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
     });
 
     io.on('connection', (socket: Socket) => {
-      console.log('A user connected');
+      console.log('A user connected', socket.id);
 
-      socket.on('send_message', (msg: string) => {
-        io?.emit('receive_message', msg);
+      socket.on('user_connected', (username: string) => {
+        console.log('User connected:', username);
+        socket.data.username = username; // Store username in socket data
+        updateUserStatus(username, 'online');
+        io?.emit('update_user_list', userStatusList);
       });
 
       socket.on('disconnect', () => {
-        console.log('A user disconnected');
+        console.log('A user disconnected', socket.id);
+        const username = socket.data.username;
+        if (username) {
+          updateUserStatus(username, 'offline');
+          io?.emit('update_user_list', userStatusList);
+        }
+      });
+
+      socket.on('send_message', (msg: any) => {
+        console.log('Message received:', msg);
+        io?.emit('receive_message', msg);
+      });
+
+      socket.on('send_file', (fileInfo: any) => {
+        console.log('File received:', fileInfo);
+        io?.emit('receive_file', fileInfo);
       });
     });
 
@@ -57,3 +85,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
 };
 
 export default handler;
+
+// Utility functions for managing user status
+const updateUserStatus = (username: string, status: 'online' | 'offline') => {
+  const user = userStatusList.find((user) => user.username === username);
+  if (user) {
+    user.status = status;
+  } else {
+    userStatusList.push({ username, status });
+  }
+};

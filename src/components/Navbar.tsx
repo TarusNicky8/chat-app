@@ -1,11 +1,15 @@
+// src/components/Navbar.tsx
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
+import { useRouter } from 'next/navigation'; // Use next/navigation for client-side routing
 
 const Navbar: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const router = useRouter(); // Added useRouter
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,9 +34,15 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // Optional: Call the server to handle logout logic
+      await axios.post('/api/logout');
+
+      // Clear token and other user data
       localStorage.removeItem('token');
       setIsAuthenticated(false); // Update state immediately
-      window.location.reload(); // Refresh the page to reflect changes
+
+      // Redirect to login or home page
+      router.push('/login'); // Changed from window.location.href to router.push
     } catch (error) {
       console.error('Error logging out:', error);
     }

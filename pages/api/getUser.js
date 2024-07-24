@@ -1,6 +1,6 @@
-// pages/api/getUser.js
 
-import { verifyToken } from '../../src/utils/auth'; // Adjust the path as necessary
+
+import { verifyToken } from '../../src/utils/auth'; 
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {

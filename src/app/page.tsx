@@ -1,3 +1,4 @@
+// src/pages/page.tsx
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -14,13 +15,18 @@ interface Message {
   timestamp: string;
 }
 
+interface UserStatus {
+  username: string;
+  status: 'online' | 'offline';
+}
+
 const Home: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [username, setUsername] = useState<string>(''); // State to store the username
+  const [users, setUsers] = useState<UserStatus[]>([]);
+  const [username, setUsername] = useState<string>('');
   const socketRef = React.useRef<Socket | null>(null);
 
   useEffect(() => {
-    // Fetch the username of the logged-in user
     const fetchUsername = async () => {
       const token = localStorage.getItem('token');
       try {
@@ -37,7 +43,6 @@ const Home: React.FC = () => {
 
     fetchUsername();
 
-    // Fetch messages from the API
     axios.get('/api/messages')
       .then((response) => {
         const fetchedMessages = response.data.map((msg: any) => ({
@@ -52,7 +57,6 @@ const Home: React.FC = () => {
         console.error('Error fetching messages:', error);
       });
 
-    // Initialize socket.io
     const socket: Socket = io({ path: '/api/socket' });
     socketRef.current = socket;
 
@@ -64,6 +68,11 @@ const Home: React.FC = () => {
         timestamp: message.timestamp,
       };
       setMessages((prevMessages) => [...prevMessages, newMessage]);
+    });
+
+    socket.on('update_user_list', (updatedUsers: UserStatus[]) => {
+      setUsers(updatedUsers);
+      console.log('Received updated user list:', updatedUsers); // Debug log
     });
 
     return () => {
@@ -78,8 +87,8 @@ const Home: React.FC = () => {
     }
 
     const newMessage: Message = {
-      id: 'temp-id', // Generate or replace with actual id logic
-      sender: username, // Use the actual username
+      id: 'temp-id',
+      sender: username,
       content,
       timestamp: new Date().toISOString(),
     };
@@ -111,7 +120,7 @@ const Home: React.FC = () => {
 
   return (
     <main className="flex flex-col items-center justify-between p-24">
-      <Chat user={{ username }}>
+      <Chat user={{ username }} users={users}>
         <MessageList messages={messages} />
         <MessageInput onSendMessage={handleSendMessage} />
       </Chat>

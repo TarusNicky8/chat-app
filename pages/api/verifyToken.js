@@ -1,4 +1,4 @@
-// pages/api/verifyToken.js
+
 
 import { verifyToken } from '../../src/utils/auth';
 
